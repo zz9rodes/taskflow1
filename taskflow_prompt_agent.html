@@ -1,0 +1,189 @@
+
+<style>
+  :root { --pad: 1.25rem; }
+  body { margin: 0; }
+  .wrap { padding: 1rem 0; font-size: 15px; color: var(--color-text-primary); }
+  .header { display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; }
+  .badge { background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); font-size: 12px; color: var(--color-text-secondary); padding: 3px 10px; }
+  pre {
+    background: var(--color-background-secondary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    padding: var(--pad);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--color-text-primary);
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
+  }
+  .actions { display: flex; gap: 8px; margin-top: 1rem; }
+  button { cursor: pointer; }
+  .copied { color: var(--color-text-success) !important; }
+</style>
+<div class="wrap">
+  <h2 style="sr-only" aria-hidden="false">Prompt agent IA – Projet TaskFlow React</h2>
+  <div class="header">
+    <i class="ti ti-robot" style="font-size:22px; color: var(--color-text-secondary);" aria-hidden="true"></i>
+    <span style="font-size:16px; font-weight:500;">Prompt agent IA — TaskFlow React</span>
+    <span class="badge">TD Niveau 3</span>
+  </div>
+
+  <pre id="prompt-text">Tu es un expert en développement front-end React. Ton rôle est de générer l'intégralité du code source d'une Single Page Application (SPA) nommée **TaskFlow** — un gestionnaire de tâches d'équipe — en respectant exactement les contraintes du cahier des charges ci-dessous.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🗂 STRUCTURE DE DOSSIERS ATTENDUE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Génère un projet Vite.js + React (JavaScript pur, sans TypeScript).
+Supprime App.css, index.css et tous les logos par défaut.
+La structure /src doit être :
+
+  src/
+  ├── components/
+  │   ├── TaskCard.jsx
+  │   └── TaskForm.jsx
+  ├── pages/
+  │   ├── Dashboard.jsx
+  │   └── TaskDetail.jsx
+  ├── layouts/
+  │   └── Navbar.jsx
+  ├── hooks/
+  │   └── useLocalStorage.js   ← (bonus)
+  └── App.jsx
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 MODÈLE DE DONNÉES — TÂCHE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Chaque tâche est un objet JavaScript avec exactement ces champs :
+
+  {
+    id: Date.now(),          // identifiant unique généré à la création
+    titre: "...",            // string
+    description: "...",      // string
+    statut: "A faire"        // "A faire" | "En cours" | "Termine"
+  }
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚙️ CONSIGNES FICHIER PAR FICHIER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+▸ App.jsx
+  - Utilise <BrowserRouter> de react-router-dom
+  - Déclare deux routes :
+      "/" → <Dashboard />
+      "/task/:id" → <TaskDetail />
+  - Intègre <Navbar /> via le layout
+
+▸ src/layouts/Navbar.jsx
+  - Barre de navigation simple avec le nom de l'app "TaskFlow"
+  - Utilise <Link> de react-router-dom (jamais de balise <a>)
+
+▸ src/pages/Dashboard.jsx
+  - Initialise l'état local tasks via useState
+  - Au montage, lit les données depuis localStorage (clé : "taskflow_data")
+    Si des données existent → JSON.parse → état initial
+    Sinon → tableau vide []
+  - useEffect surveille tasks → sérialise en JSON → sauvegarde dans localStorage
+    sous la clé "taskflow_data"
+  - Fournit la fonction onAddTask(nouvelleTache) passée en prop à <TaskForm />
+    → implémentée avec le spread operator :
+       setTasks(prev => [...prev, nouvelleTache])
+  - Affiche la liste via .map() sur tasks → chaque élément est un <TaskCard />
+    avec key={tache.id} (jamais l'index du tableau)
+  - Importe et affiche <TaskForm /> et la liste de <TaskCard />
+
+▸ src/components/TaskCard.jsx
+  - Reçoit une prop nommée tache (objet tâche complet)
+  - Affiche : tache.titre, tache.statut, un extrait de tache.description
+  - Encapsule la carte dans <Link to={`/task/${tache.id}`}> (react-router-dom)
+    Jamais de <a href="..."> pour la navigation interne
+
+▸ src/components/TaskForm.jsx
+  - Formulaire contrôlé avec trois champs :
+      titre    → <input type="text">  lié à l'état local titre via useState
+      description → <textarea>        lié à l'état local description via useState
+      statut   → <select>             avec options "A faire", "En cours", "Termine"
+                                      lié à l'état local statut via useState
+  - Chaque champ utilise onChange pour mettre à jour son état
+  - À la soumission (onSubmit) :
+      e.preventDefault()
+      Crée un objet : { id: Date.now(), titre, description, statut }
+      Appelle la prop onAddTask(nouvellesTache)
+      Réinitialise les champs du formulaire
+
+▸ src/pages/TaskDetail.jsx
+  - Utilise useParams() pour extraire id depuis l'URL
+  - Récupère la liste tasks depuis localStorage (clé "taskflow_data")
+    → JSON.parse
+  - Trouve la tâche correspondante : tasks.find(t => t.id === Number(id))
+  - Affiche en grand format : id, titre, description, statut
+  - Affiche un message si la tâche est introuvable
+
+▸ src/hooks/useLocalStorage.js  ← BONUS (+2 pts)
+  - Hook personnalisé encapsulant la logique de persistance
+  - Signature : const [value, setValue] = useLocalStorage(key, initialValue)
+  - Dashboard.jsx doit l'utiliser à la place de useState + useEffect manuels
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚫 CONTRAINTES ABSOLUES (jamais violées)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Ne jamais utiliser array.push() ou modifier l'état directement
+   → Toujours : setTasks(prev => [...prev, item])
+2. Ne jamais utiliser l'index du .map() comme key
+   → Toujours : key={tache.id}
+3. Ne jamais utiliser <a href="..."> pour la navigation interne
+   → Toujours : <Link to="..."> de react-router-dom
+4. Aucune balise <form> native ne doit déclencher un rechargement de page
+   → Toujours : e.preventDefault() dans le handler onSubmit
+5. Pas de TypeScript, pas de .tsx — JavaScript pur uniquement
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📦 DÉPENDANCES À INSTALLER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  npm install react-router-dom
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 README.md (à générer à la racine)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Inclure :
+  ## Installation
+  npm install
+
+  ## Lancement
+  npm run dev
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ CRITÈRES DE QUALITÉ
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Zéro warning ni erreur dans la console navigateur
+- Code modulaire et bien découpé (logique ≠ affichage)
+- Nommage cohérent avec le TD :
+    état tasks, fonction onAddTask, props tache, clé "taskflow_data"
+- Composants dans les bons dossiers (/components, /pages, /layouts, /hooks)
+
+Génère maintenant tous les fichiers du projet, un par un, avec leur chemin complet.</pre>
+
+  <div class="actions">
+    <button id="copy-btn" onclick="copyPrompt()">
+      <i class="ti ti-copy" aria-hidden="true"></i> Copier le prompt
+    </button>
+    <button onclick="sendPrompt('Génère maintenant le projet TaskFlow complet en respectant exactement ce prompt')">
+      Demander à Claude de coder le projet ↗
+    </button>
+  </div>
+</div>
+<script>
+function copyPrompt() {
+  const text = document.getElementById('prompt-text').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.innerHTML = '<i class="ti ti-check" aria-hidden="true"></i> Copié !';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = '<i class="ti ti-copy" aria-hidden="true"></i> Copier le prompt';
+      btn.classList.remove('copied');
+    }, 2000);
+  });
+}
+</script>
